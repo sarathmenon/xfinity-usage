@@ -86,7 +86,7 @@ class XfinityUsage(object):
     JSON_URL = 'https://customer.xfinity.com/apis/services/internet/usage'
 
     def __init__(self, username, password, debug=False,
-                 cookie_file='cookies.json', browser_name='firefox-headless'):
+                 cookie_file='cookies.json', browser_name='firefox-headless', attempts=2):
         """
         Initialize class.
 
@@ -106,6 +106,7 @@ class XfinityUsage(object):
             set_log_debug()
         if username is None or password is None:
             raise RuntimeError("Username and password cannot be None")
+        self.attempts = attempts
         self.username = username
         self.password = password
         self.browser_name = browser_name
@@ -223,15 +224,18 @@ class XfinityUsage(object):
         logged_in = True
         try:
             self.wait_by(By.ID, 'sign_in')
-            logger.info('Not logged in; logging in now')
+            logger.info('Not logged in; logging in now; count now at %d', count)
             logged_in = False
         except Exception:
             pass
         self.do_screenshot()
         if not logged_in:
-            if count > 5:
+            if count > self.attempts:
                 self.error_screenshot()
-                raise RuntimeError("Tried 5 times to log in; all failed.")
+                self.browser.quit()
+                raise RuntimeError("Tried %d times to log in; all failed.", count)
+                raise SystemExit(2)
+                sys.exit(2)
             try:
                 logger.info('Trying to login...')
                 self.do_login()
@@ -624,6 +628,9 @@ def parse_args(argv):
     p.add_argument('-p', '--graphite-prefix', action='store', type=str,
                    dest='graphite_prefix', default='xfinity',
                    help='graphite metric prefix (default: xfinity)')
+    p.add_argument('-a', '--attempts', action='store', type=int,
+                   dest='attempts', default='2',
+                   help='Login attempts before failure (default: 2)')
     args = p.parse_args(argv)
     return args
 
@@ -679,7 +686,8 @@ def main():
         os.environ['XFINITY_PASSWORD'],
         debug=debug,
         cookie_file=args.cookie_file,
-        browser_name=args.browser_name
+        browser_name=args.browser_name,
+        attempts=args.attempts
     )
     res = script.run()
     if args.json:
