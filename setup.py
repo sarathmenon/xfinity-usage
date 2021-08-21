@@ -42,7 +42,8 @@ with open('README.rst') as file:
     long_description = file.read()
 
 requires = [
-    'selenium'
+    'selenium',
+    'undetected-chromedriver',
 ]
 
 classifiers = [

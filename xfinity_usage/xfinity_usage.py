@@ -61,6 +61,7 @@ try:
     from selenium.webdriver.chrome.options import Options
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support import expected_conditions as EC
+    import undetected_chromedriver.v2 as uc
 except ImportError:
     sys.stderr.write("Error importing selenium - 'pip install selenium'\n")
     raise SystemExit(1)
@@ -76,7 +77,7 @@ selenium_log.propagate = True
 
 # supported browsers
 browsers = ['phantomjs', 'firefox', 'firefox-headless',
-            'chrome', 'chrome-headless']
+            'chrome', 'chrome-headless', 'undetected_chrome' ]
 
 
 class XfinityUsage(object):
@@ -86,7 +87,7 @@ class XfinityUsage(object):
     JSON_URL = 'https://customer.xfinity.com/apis/services/internet/usage'
 
     def __init__(self, username, password, debug=False,
-                 cookie_file='cookies.json', browser_name='firefox-headless', attempts=2):
+                 cookie_file='cookies.json', browser_name='undetected_chrome', attempts=2):
         """
         Initialize class.
 
@@ -418,6 +419,12 @@ class XfinityUsage(object):
             chrome_options = Options()
             chrome_options.add_argument("--headless")
             browser = webdriver.Chrome(chrome_options=chrome_options)
+        elif self.browser_name == 'undetected_chrome':
+            logger.debug('getting Undetected Chrome browser (local)')
+            uc_options = uc.ChromeOptions()
+            uc_options.user_data_dir = "/tmp/profile/"
+            uc_options.add_argument('--headless')
+            browser = uc.Chrome(options=uc_options)
         elif self.browser_name == 'phantomjs':
             logger.debug("getting PhantomJS browser (local)")
             dcap = dict(DesiredCapabilities.PHANTOMJS)
@@ -611,10 +618,10 @@ def parse_args(argv):
                    default=os.path.realpath('xfinity_usage_cookies.json'),
                    help='File to save cookies in')
     p.add_argument('-b', '--browser', dest='browser_name', type=str,
-                   metavar='BROWSER', default='firefox-headless',
+                   metavar='BROWSER', default='undetected_chrome',
                    choices=browsers,
                    help='Browser name/type to use (default: {}): {}'.format(
-                        'firefox-headless', ','.join(browsers)))
+                        'undetected_chrome', ','.join(browsers)))
     p.add_argument('-j', '--json', dest='json', action='store_true',
                    default=False, help='output JSON')
     p.add_argument('-g', '--graphite', action='store_true', default=False,
