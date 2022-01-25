@@ -173,18 +173,29 @@ class XfinityUsage(object):
                 )
                 self.do_screenshot()
             try:
-                rem_me = self.browser.find_element_by_id('remember_me')
-                if not rem_me.is_selected():
-                    logger.debug('Clicking "Remember Me"')
-                    # because of layering issues, for chrome-headless we need to
-                    # click the containing span instead of the checkbox itself.
-                    self.browser.find_element_by_id(
-                        'remember_me_checkbox'
-                    ).click()
+                btn = self.browser.find_element_by_id('sign_in')
             except Exception:
+                logger.critical('Unable to find Sign In button!', exc_info=True)
                 self.error_screenshot()
-                logger.warning('Unable to find Remember Me button!',
-                               exc_info=True)
+                raise RuntimeError("Unable to find Sign In button.")
+            logger.debug('Clicking Sign In button')
+            self.do_screenshot()
+            btn.click()
+            self.wait_for_page_load()
+            self.do_screenshot()
+        try:
+            rem_me = self.browser.find_element_by_id('remember_me')
+            if not rem_me.is_selected():
+                logger.debug('Clicking "Remember Me"')
+                # because of layering issues, for chrome-headless we need to
+                # click the containing span instead of the checkbox itself.
+                self.browser.find_element_by_id(
+                    'remember_me_checkbox'
+                ).click()
+        except Exception:
+            self.error_screenshot()
+            logger.warning('Unable to find Remember Me button!',
+                           exc_info=True)
         try:
             p = self.browser.find_element_by_id('passwd')
         except Exception:
